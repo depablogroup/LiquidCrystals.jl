@@ -17,15 +17,104 @@ using DifferentialEquations
 using LinearAlgebra  # imports norm
 
 # ╔═╡ 5a851a55-6004-4752-9c3d-c13dbce5f0c6
-using StaticArrays  # imports MVector
+using StaticArrays  # imports MVector, SVector, StaticMatrix
 
 # ╔═╡ ff39156e-0fc4-477d-a6ce-68358a2c1c6d
 using BenchmarkTools  # imports @belapsed
+
+# ╔═╡ 2451f85c-9557-428e-b7f6-1f4d2b12ba52
+@doc raw"""
+Encodes the local value of the $\bar{Q}$ tensor field at a given point.
+
+	QLocal(q₁, q₂, q₃, q₄, q₅, q₆)
+
+Provides a convenience constructor for `QLocal` from the
+six upper triangular elements of the matrix.
+"""
+struct QLocal{T} <: StaticMatrix{3, 3, T}
+	data::SVector{6, T}
+
+	function QLocal(data::SVector{6, T}) where {T}
+		return new{T}(data)
+	end
+
+	function QLocal(q₁, q₂, q₃, q₄, q₅, q₆)
+		return QLocal(SVector(q₁, q₂, q₃, q₄, q₅, q₆))
+	end
+end
+
+# ╔═╡ 5f60cd37-a5cb-4ff0-a26a-c6431c398c72
+"""
+Map from the linear indices (that is, how the are expected in memory)
+to the internal indices of our 6-element vector.
+"""
+const Q_LINEAR_INDICES = (1, 2, 4, 2, 3, 5, 4, 5, 6)
+
+# ╔═╡ f28a19f4-91ba-4008-b825-c420c2d431cc
+function Base.getindex(q::QLocal, i::Int)
+	return q.data[Q_LINEAR_INDICES[i]]
+end
 
 # ╔═╡ 038a20bf-6100-4798-be56-fe2f34defefc
 md"""
 Setup the environment and load libraries
 """
+
+# ╔═╡ 1987d5c0-f7f9-4bae-8f6f-72f602fb9bc8
+md"""
+# Utils
+"""
+
+# ╔═╡ a3b2b2b9-bfdd-41a1-87ce-102eb782cab4
+md"""
+To take advantage of all defintions already provided by libraries such as
+`StaticArrays` and `LinearAlgebra`, which provide methods for array manipulation
+and linear algebra, we define the basic methods to satisfy the Array interface.
+
+You can read more about this at the [Julia Manual](https://docs.julialang.org/en/v1/manual/interfaces/#man-interface-array).
+
+Actually, since we are subtyping `StaticMatrix{3, 3}`, we already get the definition
+of `Base.size`. We only really need to define `Base.getindex`.
+"""
+
+# ╔═╡ 7aab87cf-71ef-480d-9bdd-474b32c01cf7
+md"""
+We had defined before  the indices for two dimensional indexing,
+but we only need to define the linear indices and Julia already
+provides other forms of indexing for free!
+"""
+
+# ╔═╡ 11fb31f6-4a29-47c9-be35-c3cdbef9bac7
+q_test = QLocal(1, 2, 3, 4, 5, 6.0)
+
+# ╔═╡ 20769b37-cc07-4f62-b6e9-07b2af2ca5b8
+md"""
+Even if this is showing all nine elements of the array,
+internally we are only storing six.
+"""
+
+# ╔═╡ bac5863d-a115-464d-b18e-96ad4db2ea6d
+q_test[2, 3]  # We didn't even need to define getindex(::QLocal, i, j)
+
+# ╔═╡ b9894916-6000-411a-a0b3-e40d3e450f5a
+md"""
+The existing functions for linear algebra work out of the box!
+"""
+
+# ╔═╡ 143dd902-8397-4191-a469-bcc8490679a3
+size(q_test)
+
+# ╔═╡ ad26306f-512b-48bd-8798-f733a6d04de3
+q_test^2
+
+# ╔═╡ 1fb7abb0-837e-4417-a8eb-d02c07be27d7
+exp(-q_test)  # Exponential Matrix (not the same as applying exp to each element)
+
+# ╔═╡ 960c95f6-f877-40f3-aba3-48f7939842ec
+eigvals(q_test)
+
+# ╔═╡ bd61471c-3ede-4d3b-93e9-17ea0260e664
+eigvecs(q_test)
 
 # ╔═╡ a1d6582f-2416-4b80-ad9f-e3fc78d94d35
 md"""
@@ -178,7 +267,6 @@ end
 # ╔═╡ f5a20983-d02c-429c-abcc-72295972fd1e
 
 
-
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
@@ -189,7 +277,7 @@ Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [compat]
-BenchmarkTools = "~1.2.0"
+BenchmarkTools = "~1.2.1"
 DifferentialEquations = "~6.20.0"
 StaticArrays = "~1.2.13"
 """
@@ -202,6 +290,21 @@ StaticArrays = "~1.2.13"
 # ╠═7a54874b-62d0-43ef-9abd-3882c9e3e3c1
 # ╠═5a851a55-6004-4752-9c3d-c13dbce5f0c6
 # ╠═ff39156e-0fc4-477d-a6ce-68358a2c1c6d
+# ╟─1987d5c0-f7f9-4bae-8f6f-72f602fb9bc8
+# ╠═2451f85c-9557-428e-b7f6-1f4d2b12ba52
+# ╟─a3b2b2b9-bfdd-41a1-87ce-102eb782cab4
+# ╠═5f60cd37-a5cb-4ff0-a26a-c6431c398c72
+# ╟─7aab87cf-71ef-480d-9bdd-474b32c01cf7
+# ╠═f28a19f4-91ba-4008-b825-c420c2d431cc
+# ╠═11fb31f6-4a29-47c9-be35-c3cdbef9bac7
+# ╟─20769b37-cc07-4f62-b6e9-07b2af2ca5b8
+# ╠═bac5863d-a115-464d-b18e-96ad4db2ea6d
+# ╟─b9894916-6000-411a-a0b3-e40d3e450f5a
+# ╠═143dd902-8397-4191-a469-bcc8490679a3
+# ╠═ad26306f-512b-48bd-8798-f733a6d04de3
+# ╠═1fb7abb0-837e-4417-a8eb-d02c07be27d7
+# ╠═960c95f6-f877-40f3-aba3-48f7939842ec
+# ╠═bd61471c-3ede-4d3b-93e9-17ea0260e664
 # ╟─a1d6582f-2416-4b80-ad9f-e3fc78d94d35
 # ╠═f994ee31-f226-460c-a2f6-a27545aec18e
 # ╠═17b6628c-09df-4cb7-8b0a-512de2db9d68
