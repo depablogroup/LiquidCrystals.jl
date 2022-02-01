@@ -42,7 +42,21 @@ struct QLocal{T} <: StaticMatrix{3, 3, T}
 	function QLocal(q₁, q₂, q₃, q₄, q₅, q₆)
 		return QLocal(SVector(q₁, q₂, q₃, q₄, q₅, q₆))
 	end
+
+	function QLocal(q::StaticMatrix{3, 3})
+		return @inbounds QLocal(q[1], q[2], q[3], q[5], q[6], q[9])
+	end
+
+	function QLocal(t::Tuple{Tuple{Tuple{NTuple{9, T}}}}) where {T}
+		@inbounds begin
+			q = t[1][1]
+			return QLocal(q[1], q[2], q[3], q[5], q[6], q[9])
+		end
+	end
 end
+
+# ╔═╡ 6a31836a-f8de-43aa-8a4c-fe31db1cea28
+(1,)[1]
 
 # ╔═╡ 5f60cd37-a5cb-4ff0-a26a-c6431c398c72
 """
@@ -301,6 +315,18 @@ V = 1
 # ╔═╡ ef10a07f-9dee-40c7-99b1-237408b795bc
 free_energy(A, U, Q₀, V)
 
+# ╔═╡ 09459b94-5fba-4b04-acfe-15316343df89
+const δ₃ = SVector(1, 0, 0, 1, 0, 1) / 3
+
+# ╔═╡ a211412d-24d3-485c-bb03-c099a7ff97e8
+function δ_LdG(v, U)
+	Q = QLocal(v)
+	Q² = Q * Q
+	v² = Q².data
+	q = (1 - U / 3) .* v .- U .* (v² .- tr(Q²) .* (v .+ δ₃))
+	return q
+end
+
 # ╔═╡ d151eb83-e396-4c95-9785-839bc1dfd1d3
 function volterra(A, U, Q::AbstractArray{T}) where {T}
 	QLdG = similar(Q)
@@ -324,7 +350,7 @@ function volterra(A, U, Q::AbstractArray{T}) where {T}
 end
 
 # ╔═╡ a0d8d4fe-d88c-4644-8ece-062294c95e0f
-volterra(A, U, Q₀)
+QLdG = volterra(A, U, Q₀)
 
 # ╔═╡ f335cc3e-4a07-49b7-9b7c-4a6351480b68
 function f(q, p, t)
@@ -332,8 +358,29 @@ function f(q, p, t)
 	return nothing
 end
 
-# ╔═╡ f5a20983-d02c-429c-abcc-72295972fd1e
+# ╔═╡ dd5ff0a8-cd3a-4ca1-a9eb-cbc0320b00ba
+function δ_volterra!(dQ, Q, p, t)
+	A, U = p
+	dQ .= -0.1 .* δ_LdG.(Q, U)
+end
 
+# ╔═╡ 3b893c87-756a-4b41-81c7-5d7b04f7e5ac
+tspan = (0, 2)
+
+# ╔═╡ 272eb6dc-f28c-4d26-8b98-4d1328137029
+p = (A, U)
+
+# ╔═╡ 6f296774-7de6-4af4-af49-670f7fdb2de9
+prob = ODEProblem(δ_volterra!, reinterpret(SVector{6, Float64}, Q₀), tspan, p)
+
+# ╔═╡ 2b473878-94a7-4c17-98d2-d0f4afa2698b
+sol = solve(prob, Tsit5(), reltol=1e-8, abstol=1e-8)
+
+# ╔═╡ c35931b2-e94e-4646-b575-d0cdb8f4ec4d
+sol(0)
+
+# ╔═╡ 0bd97820-c4b1-428b-939a-68acad8e488d
+sol(1)
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -1245,6 +1292,7 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╠═e56f6572-ae97-4b4f-8a64-ae8e2722af2c
 # ╟─1987d5c0-f7f9-4bae-8f6f-72f602fb9bc8
 # ╠═2451f85c-9557-428e-b7f6-1f4d2b12ba52
+# ╠═6a31836a-f8de-43aa-8a4c-fe31db1cea28
 # ╟─a3b2b2b9-bfdd-41a1-87ce-102eb782cab4
 # ╠═5f60cd37-a5cb-4ff0-a26a-c6431c398c72
 # ╟─7aab87cf-71ef-480d-9bdd-474b32c01cf7
@@ -1279,9 +1327,17 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╠═2c1b9826-e079-4e1b-8974-a3f897f101b6
 # ╠═1c9669ea-6e05-4581-8d76-d38a5c37baf4
 # ╠═ef10a07f-9dee-40c7-99b1-237408b795bc
+# ╠═09459b94-5fba-4b04-acfe-15316343df89
+# ╠═a211412d-24d3-485c-bb03-c099a7ff97e8
 # ╠═d151eb83-e396-4c95-9785-839bc1dfd1d3
 # ╠═a0d8d4fe-d88c-4644-8ece-062294c95e0f
 # ╠═f335cc3e-4a07-49b7-9b7c-4a6351480b68
-# ╠═f5a20983-d02c-429c-abcc-72295972fd1e
+# ╠═dd5ff0a8-cd3a-4ca1-a9eb-cbc0320b00ba
+# ╠═3b893c87-756a-4b41-81c7-5d7b04f7e5ac
+# ╠═272eb6dc-f28c-4d26-8b98-4d1328137029
+# ╠═6f296774-7de6-4af4-af49-670f7fdb2de9
+# ╠═2b473878-94a7-4c17-98d2-d0f4afa2698b
+# ╠═c35931b2-e94e-4646-b575-d0cdb8f4ec4d
+# ╠═0bd97820-c4b1-428b-939a-68acad8e488d
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
