@@ -1,2 +1,16 @@
+name = "LiquidCrystals"
+uuid = "90861fa5-6d0e-476f-90c5-b56067c52d58"
+authors = ["Pablo Zubieta and contributors"]
+version = "0.1.0"
+
 [deps]
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+
+[compat]
+julia = "1"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
