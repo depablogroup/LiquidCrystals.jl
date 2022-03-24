@@ -1,4 +1,4 @@
-module LiquidsCrystals
+module LiquidCrystals
 
 
 export CenteredDifference, DirichletBC, NeumannBC, PeriodicBC, build_caches, apply_BCs
@@ -71,4 +71,4 @@ function volterra(A, U, Q::AbstractArray{T}) where {T}
 end
 
 
-end  # module
+end  # module LiquidCrystals
