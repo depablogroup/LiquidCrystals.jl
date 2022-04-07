@@ -1,3 +1,7 @@
+# using LinearAlgebra: eigen
+# using StaticArrays: SVector
+
+
 """
     max_eigen(M)
 
