@@ -13,7 +13,7 @@ export TwoD, generate_initial_config
 include("qtensors.jl")
 include("initialization.jl")
 include("outputs.jl")
-include("finitediffops.jl")
+include("finitediff/operators.jl")
 
 
 function free_energy(A, U, Q, V)
