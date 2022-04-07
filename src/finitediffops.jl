@@ -1,4 +1,5 @@
-using LinearAlgebra
+# using LinearAlgebra: mul!
+# using StaticArrays: SVector
 
 
 struct CenteredDifference{N, T}
@@ -6,15 +7,14 @@ struct CenteredDifference{N, T}
 	coeffs::NTuple{N, SVector{3, T}}
 end
 
-#accuracy order two
-function CenteredDifference(derivative_order::Int, Δr::NTuple{N,T}) where {N,T}
-	@assert derivative_order in (1,2)     #to make sure order derivative is 1 or 2
-
+# Accuracy order: two
+function CenteredDifference(derivative_order::Int, Δr::NTuple{N, T}) where {N, T}
+	@assert derivative_order in (1, 2)  # make sure order derivative is 1 or 2
 	n = derivative_order
 	v = if n == 1
-		SVector{3,T}(-0.5,0,0.5)    #we converted the SVector to type T
+		SVector{3, T}(-1 // 2, 0, 1 // 2)  # Use the type T of Δr
 	elseif n == 2
-		SVector{3,T}(1,-2,1)
+		SVector{3, T}(1, -2, 1)
 	end
 	coeffs = Tuple(v / Δrᵢ^n for Δrᵢ in Δr)
 	return CenteredDifference(Δr, coeffs)
@@ -34,8 +34,8 @@ struct DirichletBC{N, T <: Real} <: BoundaryCondition
 end
 
 function DirichletBC{N}(c::T) where {N, T}
-	c_l = ntuple(i -> c, Val(N))
-	return DirichletBC(c_l, c_l)    #or c_h????
+	c_ = ntuple(i -> c, Val(N))
+	return DirichletBC(c_, c_)
 end
 
 struct NeumannBC{N, T <: Real} <: BoundaryCondition
@@ -43,10 +43,10 @@ struct NeumannBC{N, T <: Real} <: BoundaryCondition
 	c_h::NTuple{N, T}
 end
 
-#if BCs are the same at each end
+# If BCs are the same at each end
 function NeumannBC{N}(c::T) where {N, T}
-	c_l = ntuple(i -> c, Val(N))
-	return NeumannBC(c_l, c_l)
+	c_ = ntuple(i -> c, Val(N))
+	return NeumannBC(c_, c_)
 end
 
 struct PeriodicBC <: BoundaryCondition
@@ -90,7 +90,6 @@ function build_caches(op, bc::BoundaryCondition, u0)
 	sz = size(u0) .+ 2
 	extended = zeros(sz)
 	result = copy(extended)
-
 	return extended, result
 end
 
