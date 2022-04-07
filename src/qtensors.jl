@@ -1,51 +1,94 @@
-using StaticArrays
+# using StaticArrays: MVector, SVector
 
 
 """
 Map from the linear indices (that is, how they are expected in memory)
-to the internal indices of our 6-element vector.
+to the internal indices of the 3-element vector of `QLocal{2, T}`.
 """
-const Q_LINEAR_INDICES = (1, 2, 3, 2, 4, 5, 3, 5, 6)
+const Q2_LINEAR_INDICES = (1, 2, 2, 3)
+
+"""
+Map from the linear indices (that is, how they are expected in memory)
+to the internal indices of the 6-element vector of `QLocal{3, T}`.
+"""
+const Q3_LINEAR_INDICES = (1, 2, 3, 2, 4, 5, 3, 5, 6)
 
 
 @doc raw"""
-Encodes the local value of the $\bar{Q}$ tensor field at a given point.
+Encodes the local value of the $\bar{Q}$ tensor field.
+"""
+struct QLocal{N, T, M} <: StaticMatrix{N, N, T}
+    data::SVector{M, T}
 
+    QLocal{3, T, 6}(data::SVector{6, T}) where {T} = new{3, T, 6}(data)
+    QLocal{2, T, 3}(data::SVector{3, T}) where {T} = new{2, T, 3}(data)
+end
+
+# Constructors for `QLocal`
+
+QLocal(data::SVector) = qtype(data)(data)
+QLocal(data::MVector) = QLocal(SVector(data))
+
+"""
+    QLocal(q₁, q₂, q₃)
+
+Provides a convenience constructor for `QLocal{2, T}` from the
+three lower triangular elements of the matrix.
+"""
+QLocal(q₁, q₂, q₃) = QLocal(SVector(q₁, q₂, q₃))
+QLocal(q₁, q₂) = QLocal(SVector(q₁, q₂, -q₁))
+
+"""
     QLocal(q₁, q₂, q₃, q₄, q₅, q₆)
 
-Provides a convenience constructor for `QLocal` from the
+Provides a convenience constructor for `QLocal{3, T}` from the
 six lower triangular elements of the matrix.
 """
-struct QLocal{T} <: StaticMatrix{3, 3, T}
-    data::SVector{6, T}
+QLocal(q₁, q₂, q₃, q₄, q₅, q₆) = QLocal(SVector(q₁, q₂, q₃, q₄, q₅, q₆))
 
-    function QLocal(data::SVector{6, T}) where {T}
-        return new{T}(data)
-    end
+@inline QLocal(t::Tuple) = QLocal(t...)
+QLocal(t::NTuple{4, Any}) = @inbounds QLocal(t[1], t[2], t[4])
+QLocal(t::NTuple{9, Any}) = @inbounds QLocal(t[1], t[2], t[3], t[5], t[6], t[9])
 
-    function QLocal(data::MVector{6})
-        return QLocal(SVector(data))
-    end
 
-    function QLocal(q₁, q₂, q₃, q₄, q₅, q₆)
-        return QLocal(SVector(q₁, q₂, q₃, q₄, q₅, q₆))
-    end
+# Methods for QLocal
 
-    function QLocal{T}(data::Tuple{Tuple{NTuple{9, T}}}) where {T}
-        q = data[1][1]
-        return QLocal(SVector(q[1], q[2], q[3], q[5], q[6], q[9]))
-    end
+"""
+Maps the type of an `SVector` to the appropriate `QLocal` container type.
+"""
+function qtype end
+qtype(::SVector{6, T}) where {T} = QLocal{3, T, 6}
+qtype(::SVector{3, T}) where {T} = QLocal{2, T, 3}
+
+"""
+Maps the type of a `QLocal` to the type of its stored `SVector`.
+"""
+function stype end
+stype(::QLocal{3, T}) where {T} = SVector{6, T}
+stype(::QLocal{2, T}) where {T} = SVector{3, T}
+
+function Base.getindex(q::QLocal{2}, i::Int)
+    return q.data[Q2_LINEAR_INDICES[i]]
 end
 
-function Base.getindex(q::QLocal, i::Int)
-    return q.data[Q_LINEAR_INDICES[i]]
+function Base.getindex(q::QLocal{3}, i::Int)
+    return q.data[Q3_LINEAR_INDICES[i]]
 end
 
-function Base.zero(::QLocal{T}) where {T}
-    return QLocal(zero(SVector{6, T}))
+Base.zero(q::QLocal) = QLocal(zero(q.data))
+
+function Base.:*(Q₁::QLocal{2}, Q₂::QLocal{2})
+    v₁ = Q₁.data
+    v₂ = Q₂.data
+    @inbounds begin
+        q₁ = v₁[1] * v₂[1] + v₁[2] * v₂[2]
+        q₂ = v₁[2] * v₂[1] + v₁[3] * v₂[2]
+        q₃ = v₁[2] * v₂[2] + v₁[3] * v₂[3]
+    end
+    return QLocal(q₁, q₂, q₃)
 end
 
-function Base.:*(Q₁::QLocal, Q₂::QLocal)
+function Base.:*(Q₁::QLocal{3}, Q₂::QLocal{3})
     v₁ = Q₁.data
     v₂ = Q₂.data
     @inbounds begin
@@ -63,19 +106,29 @@ end
 
 Trace of the square of a QLocal tensor
 """
-function tr_sq(q::QLocal)
+function tr_sq end
+
+function tr_sq(q::QLocal{2})
     v = q.data
-    return  (v[1] * v[1] + v[4] * v[4] + v[6] * v[6]) +
-        2 * (v[2] * v[2] + v[3] * v[3] + v[5] * v[5])
+    return @inbounds 2 * (v[1]^2 + v[2]^2)
+end
+
+function tr_sq(q::QLocal{3})
+    v = q.data
+    return @inbounds (v[1]^2 + v[4]^2 + v[6]^2) + 2 * (v[2]^2 + v[3]^2 + v[5]^2)
 end
 
 """    tr_sq(::QLocal)
 
 Trace of the cube of a QLocal tensor
 """
-function tr_cb(q::QLocal)
+function tr_cb end
+
+tr_cb(::QLocal{2, T}) where {T} = zero(T)
+
+function tr_cb(q::QLocal{3})
     v = q.data
-    return (
+    return @inbounds (
         v[1] * v[1] * v[1] +
         v[4] * v[4] * v[4] +
         v[6] * v[6] * v[6] +
@@ -91,16 +144,18 @@ end
 Simultaneously computes the traces of the square and the cube
 of a QLocal tensor.
 """
-function tr_sq_cb(q::QLocal)
+function tr_sq_cb end
+
+function tr_sq_cb(q::QLocal{2, T}) where {T}
+    # For two dimensional tensors both values are independent
+    return tr_sq(q), tr_cb(q)
+end
+
+function tr_sq_cb(q::QLocal{3})
     v = q.data
 
     @inbounds begin
-        v₁ = v[1]
-        v₂ = v[2]
-        v₃ = v[3]
-        v₄ = v[4]
-        v₅ = v[5]
-        v₆ = v[6]
+        v₁, v₂, v₃, v₄, v₅, v₆ = v[1], v[2], v[3], v[4], v[5], v[6]
     end
 
     v₁² = v₁ * v₁
@@ -110,12 +165,12 @@ function tr_sq_cb(q::QLocal)
     v₅² = v₅ * v₅
     v₆² = v₆ * v₆
 
-    trv² = v₁² + v₄² + v₆² + 2 * (v₂² + v₃² + v₅²)
-    trv³ = (
+    trq² = v₁² + v₄² + v₆² + 2 * (v₂² + v₃² + v₅²)
+    trq³ = (
         v₁ * v₁² + v₄ * v₄² + v₆ * v₆²
         + 6 * v₂ * v₃ * v₅
         + 3 * (v₁ * (v₂² + v₃²) + v₄ * (v₂² + v₅²) + v₆ * (v₃² + v₅²))
     )
 
-    return trv², trv³
+    return trq², trq³
 end
