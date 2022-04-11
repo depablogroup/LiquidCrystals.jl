@@ -1,5 +1,6 @@
 using LiquidCrystals
 using LinearAlgebra
+using StaticArrays
 using Test
 
 
@@ -16,7 +17,7 @@ using Test
         @test q^2 == q * q == SMatrix(q)^2
         @test typeof(q^2) === typeof(q * q) === QLocal{3, Float64, 6}
 
-        trq², trq³ = tr_sq_cb(q)
+        trq², trq³ = LiquidCrystals.tr_sq_cb(q)
         @test LiquidCrystals.tr_sq(q) == tr(q^2) == trq²
         @test LiquidCrystals.tr_cb(q) == tr(q^3) == trq³
     end
@@ -24,9 +25,9 @@ end
 
 
 @testset "Initialization" begin
-    dims = (10, 10)
     U = 3.0
-    Q₀ = generate_initial_config(dims, U)
+    dims = (10, 10)
+    Q₀ = generate_initial_config(U, dims)
 
     @test length(Q₀) == 100
     @test all(q -> abs(tr(q)) < 2eps(), Q₀)
