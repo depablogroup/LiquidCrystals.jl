@@ -6,8 +6,9 @@ Library to solve the Landau-de Gennes model for nematic liquid crystals.
 
 From a [Julia](https://julialang.org/downloads/) REPL session run
 
-```julia
+```
 julia> ]
+
 pkg> dev https://github.com/depablogroup/LiquidCrystals.jl.git
 ```
 
