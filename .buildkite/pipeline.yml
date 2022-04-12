@@ -1,0 +1,29 @@
+steps:
+
+  - label: ":julia: Run tests on Julia LTS"
+    plugins:
+      - JuliaCI/julia#v1:
+          version: 1.6
+      - JuliaCI/julia-test#v1:
+    command: |
+      julia -e 'using Pkg;
+        println("--- :julia: Instantiating project");
+        Pkg.develop(PackageSpec(path = pwd()));
+        Pkg.add(PackageSpec(name = "LiquidCrystals"));
+        Pkg.instantiate();
+        println("+++ :julia: Running tests");
+        Pkg.test("LiquidCrystals");'
+
+  - label: ":julia: Run tests on Julia stable"
+    plugins:
+      - JuliaCI/julia#v1:
+          version: 1
+      - JuliaCI/julia-test#v1:
+    command: |
+      julia -e 'using Pkg;
+        println("--- :julia: Instantiating project");
+        Pkg.develop(PackageSpec(path = pwd()));
+        Pkg.add(PackageSpec(name = "LiquidCrystals"));
+        Pkg.instantiate();
+        println("+++ :julia: Running tests");
+        Pkg.test("LiquidCrystals");'
