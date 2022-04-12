@@ -7,7 +7,7 @@ crystals simulations.
 
 Open a Julia REPL session from the `examples/notebooks` folder and run
 
-```julia
+```
 julia> ]
 
 (@v1.7) pkg> activate --temp
@@ -22,7 +22,7 @@ julia> ]
 This will take some time the first time you run it. After the process finishes, press
 the Backspace key to go back to the `julia>` prompt. Then run
 
-```julia
+```
 julia> using Pluto
 
 julia> Pluto.run()
