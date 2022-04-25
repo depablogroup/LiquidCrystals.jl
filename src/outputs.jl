@@ -25,9 +25,9 @@ function s_and_directors(Qs::AbstractArray{QT}) where {QT <: QLocal}
     c = d // (d - 1)
 
     n = length(Qs)
-    ST = stype(QT)  # `QLocal` internal `SVector` type
-    Ss = Vector{eltype(ST)}(undef, n)
-    n̂s = Vector{ST}(undef, n)
+    NT = ntype(QT)
+    Ss = Vector{eltype(NT)}(undef, n)
+    n̂s = Vector{NT}(undef, n)
 
     @inbounds @simd for i in eachindex(Qs)
         λ, n̂ = max_eigen(Qs[i])
@@ -42,3 +42,7 @@ function s_and_directors(A::AbstractArray{T}) where {T <: SVector}
     # If we get `SVector`s, first reinterpret as `QLocal`s.
     return s_and_directors(reinterpret(reshape, qtype(T), A))
 end
+
+ntype(::Type{QLocal2{T}}) where {T} = SVector{2, T}
+ntype(::Type{QLocal3{T}}) where {T} = SVector{3, T}
+ntype(::Q) where {Q <: QLocal} = ntype(Q)

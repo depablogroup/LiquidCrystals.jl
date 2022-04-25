@@ -5,7 +5,7 @@ using LinearAlgebra
 using StaticArrays
 
 
-export QLocal
+export QLocal, QLocal2, QLocal3
 export CenteredDifference, DirichletBC, NeumannBC, PeriodicBC
 export TwoD, generate_initial_config
 
@@ -27,11 +27,11 @@ function free_energy(A, U, Q, V)
     return A * V * fLdG
 end
 
-function volterra(A, U, Q::AbstractArray{T}) where {T}
+function volterra(A, U, Q::AbstractArray{T}) where {T <: QLocal}
     QLdG = similar(Q)
     # The following is equivalent to the lower triangular part
     # of one third of the unit matrix
-    δ₃ = SVector(1, 0, 0, 1, 0, 1) / 3
+    δ₃ = SVector(1, 0, 0, 1, 0, 1) // 3
     # Allocate one vector for partial computations
     #q = MVector{6, eltype(T)}(undef)
 
@@ -46,6 +46,10 @@ function volterra(A, U, Q::AbstractArray{T}) where {T}
     end
 
     return QLdG
+end
+
+function volterra(A, U, Q::AbstractArray{T}) where {T <: SVector}
+    return volterra(A, U, reinterpret(qtype(T), Q))
 end
 
 

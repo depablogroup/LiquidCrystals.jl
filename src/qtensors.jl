@@ -3,13 +3,13 @@
 
 """
 Map from the linear indices (that is, how they are expected in memory)
-to the internal indices of the 3-element vector of `QLocal{2, T}`.
+to the internal indices of the 3-element vector of `QLocal2{T}`.
 """
 const Q2_LINEAR_INDICES = (1, 2, 2, 3)
 
 """
 Map from the linear indices (that is, how they are expected in memory)
-to the internal indices of the 6-element vector of `QLocal{3, T}`.
+to the internal indices of the 6-element vector of `QLocal3{T}`.
 """
 const Q3_LINEAR_INDICES = (1, 2, 3, 2, 4, 5, 3, 5, 6)
 
@@ -24,15 +24,18 @@ struct QLocal{N, T, M} <: StaticMatrix{N, N, T}
     QLocal{2, T, 3}(data::SVector{3, T}) where {T} = new{2, T, 3}(data)
 end
 
-# Constructors for `QLocal`
+# Aliases for two and three dimensions
+const QLocal3{T} = QLocal{3, T, 6}
+const QLocal2{T} = QLocal{2, T, 3}
 
+# Constructors for `QLocal`
 QLocal(data::SVector) = qtype(data)(data)
 QLocal(data::MVector) = QLocal(SVector(data))
 
 """
     QLocal(q₁, q₂, q₃)
 
-Provides a convenience constructor for `QLocal{2, T}` from the
+Provides a convenience constructor for `QLocal2` from the
 three lower triangular elements of the matrix.
 """
 QLocal(q₁, q₂, q₃) = QLocal(SVector(q₁, q₂, q₃))
@@ -41,7 +44,7 @@ QLocal(q₁, q₂) = QLocal(SVector(q₁, q₂, -q₁))
 """
     QLocal(q₁, q₂, q₃, q₄, q₅, q₆)
 
-Provides a convenience constructor for `QLocal{3, T}` from the
+Provides a convenience constructor for `QLocal3` from the
 six lower triangular elements of the matrix.
 """
 QLocal(q₁, q₂, q₃, q₄, q₅, q₆) = QLocal(SVector(q₁, q₂, q₃, q₄, q₅, q₆))
@@ -57,27 +60,29 @@ QLocal(t::NTuple{9, Any}) = @inbounds QLocal(t[1], t[2], t[3], t[5], t[6], t[9])
 Maps the type of an `SVector` to the appropriate `QLocal` container type.
 """
 function qtype end
-qtype(::SVector{6, T}) where {T} = QLocal{3, T, 6}
-qtype(::SVector{3, T}) where {T} = QLocal{2, T, 3}
+qtype(::Type{SVector{3, T}}) where {T} = QLocal2{T}
+qtype(::Type{SVector{6, T}}) where {T} = QLocal3{T}
+qtype(::S) where {S <: SVector} = qtype(S)
 
 """
 Maps the type of a `QLocal` to the type of its stored `SVector`.
 """
 function stype end
-stype(::QLocal{3, T}) where {T} = SVector{6, T}
-stype(::QLocal{2, T}) where {T} = SVector{3, T}
+stype(::Type{QLocal2{T}}) where {T} = SVector{3, T}
+stype(::Type{QLocal3{T}}) where {T} = SVector{6, T}
+stype(::Q) where {Q <: QLocal} = stype(Q)
 
-function Base.getindex(q::QLocal{2}, i::Int)
+function Base.getindex(q::QLocal2, i::Int)
     return q.data[Q2_LINEAR_INDICES[i]]
 end
 
-function Base.getindex(q::QLocal{3}, i::Int)
+function Base.getindex(q::QLocal3, i::Int)
     return q.data[Q3_LINEAR_INDICES[i]]
 end
 
 Base.zero(q::QLocal) = QLocal(zero(q.data))
 
-function Base.:*(Q₁::QLocal{2}, Q₂::QLocal{2})
+function Base.:*(Q₁::QLocal2, Q₂::QLocal2)
     v₁ = Q₁.data
     v₂ = Q₂.data
     @inbounds begin
@@ -88,7 +93,7 @@ function Base.:*(Q₁::QLocal{2}, Q₂::QLocal{2})
     return QLocal(q₁, q₂, q₃)
 end
 
-function Base.:*(Q₁::QLocal{3}, Q₂::QLocal{3})
+function Base.:*(Q₁::QLocal3, Q₂::QLocal3)
     v₁ = Q₁.data
     v₂ = Q₂.data
     @inbounds begin
@@ -108,12 +113,12 @@ Trace of the square of a QLocal tensor
 """
 function tr_sq end
 
-function tr_sq(q::QLocal{2})
+function tr_sq(q::QLocal2)
     v = q.data
     return @inbounds 2 * (v[1]^2 + v[2]^2)
 end
 
-function tr_sq(q::QLocal{3})
+function tr_sq(q::QLocal3)
     v = q.data
     return @inbounds (v[1]^2 + v[4]^2 + v[6]^2) + 2 * (v[2]^2 + v[3]^2 + v[5]^2)
 end
@@ -124,9 +129,9 @@ Trace of the cube of a QLocal tensor
 """
 function tr_cb end
 
-tr_cb(::QLocal{2, T}) where {T} = zero(T)
+tr_cb(::QLocal2{T}) where {T} = zero(T)
 
-function tr_cb(q::QLocal{3})
+function tr_cb(q::QLocal3)
     v = q.data
     return @inbounds (
         v[1] * v[1] * v[1] +
@@ -146,12 +151,12 @@ of a QLocal tensor.
 """
 function tr_sq_cb end
 
-function tr_sq_cb(q::QLocal{2, T}) where {T}
+function tr_sq_cb(q::QLocal2{T}) where {T}
     # For two dimensional tensors both values are independent
     return tr_sq(q), tr_cb(q)
 end
 
-function tr_sq_cb(q::QLocal{3})
+function tr_sq_cb(q::QLocal3)
     v = q.data
 
     @inbounds begin

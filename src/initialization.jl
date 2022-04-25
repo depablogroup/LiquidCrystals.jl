@@ -12,9 +12,9 @@ struct ThreeD <: DirectorDimensionality end
 Given a value of `U` and a shape, returns a vector of `QLocal`s of size `prod(shape)`
 initialized from randomly oriented directors.
 """
-generate_initial_config(U, shape) = generate_initial_config(U, shape, ThreeD)
+generate_initial_config(U, shape) = generate_initial_config(ThreeD, U, shape)
 
-function generate_initial_config(U, shape, ::Type{D}) where {D <: DirectorDimensionality}
+function generate_initial_config(::Type{D}, U, shape) where {D <: DirectorDimensionality}
     N = prod(shape)
     S = nematic_order_param(D, U)
 
@@ -33,12 +33,13 @@ function generate_initial_config(U, shape, ::Type{D}) where {D <: DirectorDimens
     return Q
 end
 
-qtype(::Type{TwoD}) = QLocal{2, Float64, 3}
-qtype(::Type{ThreeD}) = QLocal{3, Float64, 6}
+qtype(::Type{TwoD}) = QLocal2{Float64}
+qtype(::Type{ThreeD}) = QLocal3{Float64}
 
 mtype(::Type{TwoD}) = MVector{2, Float64}
 mtype(::Type{ThreeD}) = MVector{3, Float64}
 
+nematic_order_param(U) = nematic_order_param(ThreeD, U)
 nematic_order_param(::Type{TwoD}, U) = sqrt(2 // 3 - 2 / U)
 nematic_order_param(::Type{ThreeD}, U) = 1 // 4 + 3 // 4 * sqrt(1 - 8 / (3 * U))
 
