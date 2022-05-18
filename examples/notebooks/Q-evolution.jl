@@ -21,7 +21,7 @@ using LiquidCrystals
 end
 
 # ╔═╡ 6589a256-4190-48c8-829d-c937280fc2a3
-U = 3.0
+U = 3.5
 
 # ╔═╡ 23c72901-ef1a-410d-ac08-399a9121b5ac
 Nx = Ny = 75
@@ -30,13 +30,16 @@ Nx = Ny = 75
 dims = (Nx, Ny, 1)
 
 # ╔═╡ c0499600-0b28-450e-985d-cd79377513ed
-Q₀ = generate_initial_config(U, dims)
+Q₀ = generate_initial_config(LiquidCrystals.TwoD, U, dims)
 
 # ╔═╡ 972397e7-6c7f-47af-b8c9-eb1c82bf58e5
-S = LiquidCrystals.nematic_order_param(LiquidCrystals.ThreeD, U)
+S = LiquidCrystals.nematic_order_param(LiquidCrystals.TwoD, U)
 
 # ╔═╡ 28e21d5a-2a9e-41ab-b656-79feff86b68d
 ST = LiquidCrystals.stype(eltype(Q₀))
+
+# ╔═╡ 95d43bfe-3a4b-48ec-98cb-dfe57e7e5b47
+QT = eltype(Q₀)
 
 # ╔═╡ 29e8b617-6fa1-4d7b-9d65-89dd1c5427e3
 Q_0 = reinterpret(reshape, ST, Q₀)
@@ -45,7 +48,7 @@ Q_0 = reinterpret(reshape, ST, Q₀)
 Q_00 = reshape(Q_0, Nx, Ny)
 
 # ╔═╡ 3c976814-a655-409f-adbd-81c745851231
-Q_trial = generate_initial_config(U, (Nx + 2 ,Ny + 2, 1))
+Q_trial = generate_initial_config(LiquidCrystals.TwoD, U, (Nx + 2, Ny + 2))
 
 # ╔═╡ b1937dd1-6b80-4636-ba53-72fb5dfe3641
 Q_trial1 = reinterpret(reshape, ST, similar(Q_trial))
@@ -59,23 +62,14 @@ P_Q = similar(E_Q)
 # ╔═╡ 19340a4c-1d6d-4835-99b5-2509372d167a
 dx= 1.0
 
-# ╔═╡ ba87ac48-d968-47a8-8ca1-452c3583809e
-
-
 # ╔═╡ a46f4be1-3973-498e-903c-0dbe4bc589ff
 Δ = CenteredDifference{2}(2, dx)
 
 # ╔═╡ e9c7ec35-8150-4d41-9290-484ed3940f2a
 bc = PeriodicBC()
 
-# ╔═╡ 35f9157d-0cf1-4f9b-b929-48f46c4e94dc
-P_Q[2:end-1, 2:end-1]
-
 # ╔═╡ b99b418a-59df-405b-9d43-6d682ce179c9
 const A = 1
-
-# ╔═╡ 6acc864b-4cbe-4a22-acfa-36e7af020378
-Q_2=-0.1*reinterpret(reshape, SVector{6, Float64},LiquidCrystals.volterra(A,U,reinterpret(reshape, QLocal3{Float64}, Q_00))  )  + 0.1*P_Q[2:end-1, 2:end-1]
 
 # ╔═╡ d365ff2e-e06f-4ddc-9f95-c73af806400d
 function test_dynamics!(dQ, Q, p, t)
@@ -88,7 +82,7 @@ function test_dynamics!(dQ, Q, p, t)
 
 	QLdG = reinterpret(eltype(Q), LiquidCrystals.volterra(A, U, Q))
 	dQ .= 0.1 .* (ΔQ .- QLdG)
-end 
+end
 
 # ╔═╡ 29bd6b89-b959-41b4-898f-7a9b6f3eb587
 t_f = 5000
@@ -110,6 +104,9 @@ sol = solve(prob, Tsit5(), saveat = t_f / Nt, save_start = true)
 
 # ╔═╡ c27f5407-5068-4a0b-801b-65dd83975d20
 AA = reinterpret(reshape, eltype(Q₀), sol)
+
+# ╔═╡ c0410f94-5143-4684-b5a4-ab634d8a5e92
+LiquidCrystals.s_and_directors(reinterpret(reshape, QT, sol[end]))
 
 # ╔═╡ 5145d969-b5fe-4a07-8ea5-8f5c81514a8c
 
@@ -158,6 +155,9 @@ end
 #=╠═╡
 paramovie(sol, space, Nt)
   ╠═╡ =#
+
+# ╔═╡ 7e04130d-1980-42f6-9985-8cf08b53dbdc
+
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -1746,6 +1746,7 @@ version = "3.5.0+0"
 # ╠═c0499600-0b28-450e-985d-cd79377513ed
 # ╠═972397e7-6c7f-47af-b8c9-eb1c82bf58e5
 # ╠═28e21d5a-2a9e-41ab-b656-79feff86b68d
+# ╠═95d43bfe-3a4b-48ec-98cb-dfe57e7e5b47
 # ╠═29e8b617-6fa1-4d7b-9d65-89dd1c5427e3
 # ╠═f23433e9-f6e5-4207-a5dd-97c8d57b5411
 # ╠═3c976814-a655-409f-adbd-81c745851231
@@ -1753,11 +1754,8 @@ version = "3.5.0+0"
 # ╠═7af3c9ac-ed01-4f14-9718-ec4dc24898c7
 # ╠═9cc3585d-31d5-432f-8423-d3bbfe058321
 # ╠═19340a4c-1d6d-4835-99b5-2509372d167a
-# ╠═ba87ac48-d968-47a8-8ca1-452c3583809e
 # ╠═a46f4be1-3973-498e-903c-0dbe4bc589ff
 # ╠═e9c7ec35-8150-4d41-9290-484ed3940f2a
-# ╠═35f9157d-0cf1-4f9b-b929-48f46c4e94dc
-# ╠═6acc864b-4cbe-4a22-acfa-36e7af020378
 # ╠═b99b418a-59df-405b-9d43-6d682ce179c9
 # ╠═d365ff2e-e06f-4ddc-9f95-c73af806400d
 # ╠═29bd6b89-b959-41b4-898f-7a9b6f3eb587
@@ -1767,10 +1765,12 @@ version = "3.5.0+0"
 # ╠═ee00acfc-ce27-4176-ab66-1866905d5ebf
 # ╠═95734e5d-213a-4cdc-8cab-88b74b7368c3
 # ╠═c27f5407-5068-4a0b-801b-65dd83975d20
+# ╠═c0410f94-5143-4684-b5a4-ab634d8a5e92
 # ╠═5145d969-b5fe-4a07-8ea5-8f5c81514a8c
 # ╠═425f1710-f681-4a45-b11a-881c699da543
 # ╠═dd41ef33-a9c6-48aa-ae54-2918e0385db8
 # ╠═653286e4-516f-439a-9b8a-9ed18af73406
 # ╠═6f47f468-9235-44d7-9def-93d5b60e9d5d
+# ╠═7e04130d-1980-42f6-9985-8cf08b53dbdc
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
