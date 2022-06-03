@@ -73,15 +73,15 @@ const A = 1
 
 # ╔═╡ d365ff2e-e06f-4ddc-9f95-c73af806400d
 function test_dynamics!(dQ, Q, p, t)
-	Δ, bc, E_Q, P_Q = p
+    Δ, bc, E_Q, P_Q = p
 
-	E_Q = LiquidCrystals.apply_BCs(Δ, Q, bc, E_Q)
+    E_Q = LiquidCrystals.apply_BCs(Δ, Q, bc, E_Q)
     # Compute the Laplacian
-	mul!(P_Q, Δ, E_Q)
-	ΔQ = @view(P_Q[2:end-1, 2:end-1])
+    mul!(P_Q, Δ, E_Q)
+    ΔQ = @view(P_Q[2:end-1, 2:end-1])
 
-	QLdG = reinterpret(eltype(Q), LiquidCrystals.volterra(A, U, Q))
-	dQ .= 0.1 .* (ΔQ .- QLdG)
+    QLdG = reinterpret(eltype(Q), LiquidCrystals.volterra(A, U, Q))
+    dQ .= 0.1 .* (ΔQ .- QLdG)
 end
 
 # ╔═╡ 29bd6b89-b959-41b4-898f-7a9b6f3eb587
@@ -113,41 +113,39 @@ LiquidCrystals.s_and_directors(reinterpret(reshape, QT, sol[end]))
 
 # ╔═╡ 425f1710-f681-4a45-b11a-881c699da543
 function writevtk(filename, space, Ss, n̂s)
-	open(filename, "w") do file
-		write(file, "# vtk DataFile Version 3.0 \nvtk output\nASCII\nDATASET UNSTRUCTURED_GRID \n")
-		write(file, "POINTS $(length(Ss)) float\n")
-		write(file, space)
-	
-
-		write(file, "\n POINT_DATA $(length(Ss)) \n")
-		write(file, "SCALARS S float\nLOOKUP_TABLE default\n")
-		
-		write(file, join(Ss, "\n"))
+    open(filename, "w") do file
+        write(file, "# vtk DataFile Version 3.0 \nvtk output\nASCII\nDATASET UNSTRUCTURED_GRID \n")
+        write(file, "POINTS $(length(Ss)) float\n")
+        write(file, space)
 
 
-		write(file, "\n VECTORS Director float\n")
-		
-		#for i in eachindex(n_array[1,:,:])
-			#write(file, n_array[1,i])
-		
-		write(file, replace(join(n̂s, "\n"), r"[\[,\]]" => ""))
-	end
+        write(file, "\n POINT_DATA $(length(Ss)) \n")
+        write(file, "SCALARS S float\nLOOKUP_TABLE default\n")
+
+        write(file, join(Ss, "\n"))
+
+        write(file, "\n VECTORS Director float\n")
+
+        delim = eltype(n̂s) <: SVector{2} ? " 0\n" : " \n"
+        write(file, replace(join(n̂s, delim), r"[\[,\]]" => ""))
+        write(file, delim)
+    end
 end
 
 # ╔═╡ dd41ef33-a9c6-48aa-ae54-2918e0385db8
 space = replace(
-	join(Iterators.product(1:Nx, 1:Ny), " 0 \n"), r"[(,)]" => ""
+    join(Iterators.product(1:Nx, 1:Ny), " 0 \n"), r"[(,)]" => ""
 ) * " 0 \n"
 
 # ╔═╡ 653286e4-516f-439a-9b8a-9ed18af73406
 function paramovie(sol, space, nₜ, path = "q_data")
-	mkpath(path)
-	
-	for i in 1:nₜ
-		name = joinpath(path, "frame_$i.vtk")
-		Ss, n̂s = LiquidCrystals.s_and_directors(sol[i])
-		writevtk(name, space, Ss, n̂s)
-	end
+    mkpath(path)
+
+    for i in 1:nₜ
+        name = joinpath(path, "frame_$i.vtk")
+        Ss, n̂s = LiquidCrystals.s_and_directors(sol[i])
+        writevtk(name, space, Ss, n̂s)
+    end
 end
 
 # ╔═╡ 6f47f468-9235-44d7-9def-93d5b60e9d5d
