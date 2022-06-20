@@ -211,7 +211,7 @@ Solve the ODE.
 """
 
 # ╔═╡ 01763c73-4c25-401c-a668-755b66b5d0fe
-sol= solve(prob, Tsit5(), progress = true, saveat = t_f / Nt, save_start = true)
+sol = solve(prob, Tsit5(), progress = true, saveat = t_f / Nt, save_start = true)
 
 # ╔═╡ de73cc82-44c7-4fc0-b2a1-8c40f0687002
 md"""

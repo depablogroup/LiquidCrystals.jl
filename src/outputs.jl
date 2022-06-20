@@ -8,7 +8,7 @@
 Returns the value of the maximum eigenvalue of `M` and its correspoding eigenvector.
 """
 function max_eigen(M)
-    vals, vecs = eigen(M)
+    vals, vecs = eigen(Symmetric(M))
     # The results of `eigen` are ordered from lower to higher eigenvalue,
     # so we take the last one.
     return vals[end], vecs[:, end]
