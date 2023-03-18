@@ -1,3 +1,5 @@
 Manifest.toml
+Project.toml
 docs/build/
 .vscode/
+.DS_Store
