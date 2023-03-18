@@ -31,7 +31,7 @@ pkg> add https://github.com/depablogroup/LiquidCrystals.jl.git
 !!! note
     Alternative installation method:
     ```julia
-    julia> import Pkg; Pkg.add("DOLCE")
+    julia> import Pkg; Pkg.pkg"add https://github.com/depablogroup/LiquidCrystals.jl.git"
     ```
 To load the package, use 
 ```julia
