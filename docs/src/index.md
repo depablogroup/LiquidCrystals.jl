@@ -25,7 +25,7 @@ The best way to get started with `DOLCE` is by working through the documented ex
 
 You can install DOLCE from the Pkg REPL (press `]` in the Julia REPL to eneter `pkg>` mode):
 ```
-pkg> add DOLCE
+pkg> add https://github.com/depablogroup/LiquidCrystals.jl.git
 ```
 
 !!! note
