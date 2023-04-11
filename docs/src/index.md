@@ -40,13 +40,12 @@ using DOLCE
 ## Debugging information
 
 ## Credits
-The following people are involved in the development of DOLCE:
-* Prof. Juan J. de Pablo
+The main developers of DOLCE.jl are:
 * Viviana Palacio-Betancur
-* Dr. Pablo Zubieta-Rico
 * Jonathan Salmerón-Hernández
+* [Dr. Pablo Zubieta Rico](https://github.com/pabloferz)
 
-Past contributors and developers of methods within the de Pablo Lab @ UChicago include:
+The following people have contributed to the development of computational methods implemented within the [de Pablo Group](https://pme.uchicago.edu/group/de-pablo-group) at The University of Chicago:
 * Prof. Juan P. Hernández-Ortiz
 * Prof. Julio C. Armas-Pérez
 * Dr. Alejandro Londoño-Hurtado
@@ -55,4 +54,4 @@ Past contributors and developers of methods within the de Pablo Lab @ UChicago i
 * Dr. Tyler Roberts
 * Dr. Mohammad Rahimi
 
-All current contributors are affiliated with the Pritzker School of Molecular Engineering at the University of Chicago.
+All current contributors are affiliated with the Pritzker School of Molecular Engineering at the University of Chicago and all the work here has been supervised by [Prof. Juan J. de Pablo](https://pme.uchicago.edu/faculty/juan-de-pablo).
