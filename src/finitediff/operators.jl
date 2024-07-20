@@ -161,7 +161,7 @@ function LinearAlgebra.mul!(B::AbstractArray, Op::CenteredDifference{N, T, Tag},
 	# While not on the edges
 	#for I in C[2:(end - 1), 2:(end - 1)]
 	for I in CI
-		B[I] = op(A, I, coeffs)
+		  B[I] = op(A, I, coeffs)
 	end
 	return B
 end
@@ -207,10 +207,11 @@ function divergence(A, I, coeffs::NTuple{3})
 	Ix = CartesianIndex(1, 0, 0)
 
 	Cx, Cy, Cz = coeffs
-	div = ( Cx[1] * A[I - Ix][1] + Cx[2] * A[I][1] + Cx[3] * A[I + Ix][1] 
-	+ Cy[1] * A[I - Iy][2] + Cy[2] * A[I][2] + Cy[3] * A[I + Iy][2]
-	+ Cz[1] * A[I - Iz][3] + Cz[2] * A[I][3] + Cz[3] * A[I + Iz][3] )
-	
+	div = (
+      Cx[1] * A[I - Ix][1] + Cx[2] * A[I][1] + Cx[3] * A[I + Ix][1] +
+      Cy[1] * A[I - Iy][2] + Cy[2] * A[I][2] + Cy[3] * A[I + Iy][2] +
+      Cz[1] * A[I - Iz][3] + Cz[2] * A[I][3] + Cz[3] * A[I + Iz][3]
+  )
 	return div
 end
 
@@ -234,16 +235,15 @@ function laplacian(A, I, coeffs::NTuple{3})
 	Cx, Cy, Cz = coeffs
 	
 	return (
-		Cx[1] * A[I - Ix] + Cx[2] * A[I] + Cx[3] * A[I + Ix] +
-		Cy[1] * A[I - Iy] + Cy[2] * A[I] + Cy[3] * A[I + Iy] +
-		Cz[1] * A[I - Iz] + Cz[2] * A[I] + Cz[3] * A[I + Iz]
+		  Cx[1] * A[I - Ix] + Cx[2] * A[I] + Cx[3] * A[I + Ix] +
+		  Cy[1] * A[I - Iy] + Cy[2] * A[I] + Cy[3] * A[I + Iy] +
+		  Cz[1] * A[I - Iz] + Cz[2] * A[I] + Cz[3] * A[I + Iz]
 	)
 end
 
 # The next applies to Laplacian and Divergence
 auxiliar_caches(::Type{E}, op) where{E} = E 
 auxiliar_caches(::Type{E}, ::CenteredDifference{N, T, Gradient}) where {N, T, E} = SVector{N, E}
-
 
 function build_caches(op::CenteredDifference{N, T, Tag}, box::BoxBC, u0) where {N, T, Tag} #do we need op?, yes we do! 
 	sz = size(u0) .+ 2
@@ -258,7 +258,6 @@ function build_caches(op::CenteredDifference{N, T, Tag}, box::BoxBC, u0) where {
 
 	
 	return extended, result
-
 end
 
 function build_caches(op, bc::DirichletBC{2}, u0) #do we need op?
