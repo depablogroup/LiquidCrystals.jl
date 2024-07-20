@@ -2,28 +2,49 @@
 # using StaticArrays: SVector
 
 
-struct CenteredDifference{N, T}
-    dr::NTuple{N, T}
-    coeffs::NTuple{N, SVector{3, T}}
+struct CenteredDifference{N, T, Tag}
+	dr::NTuple{N, T}
+	coeffs::NTuple{N, SVector{3, T}}
 end
 
-# Accuracy order: two
-function CenteredDifference(derivative_order::Int, Δr::NTuple{N, T}) where {N, T}
-    @assert derivative_order in (1, 2)  # make sure order derivative is 1 or 2
-    n = derivative_order
-    v = if n == 1
-        SVector{3, T}(-1 // 2, 0, 1 // 2)  # Use the type T of Δr
-    elseif n == 2
-        SVector{3, T}(1, -2, 1)
-    end
-    coeffs = Tuple(v / Δrᵢ^n for Δrᵢ in Δr)
-    return CenteredDifference(Δr, coeffs)
+#accuracy order two
+function CenteredDifference{Tag}(Δr::NTuple{N, T}) where {N, T, Tag}
+	# @assert derivative_order in (1,2)     #to make sure order derivative is 1 or 2
+	
+	n = derivative_order(Tag)
+	v = if n == 1 
+		SVector{3,T}(-0.5,0,0.5)    #we converted the SVector to type T
+	elseif n == 2
+		SVector{3,T}(1,-2,1)
+	end
+	coeffs = Tuple(v / Δrᵢ^n for Δrᵢ in Δr)
+	return CenteredDifference{N, T, Tag}(Δr, coeffs)
 end
 
-function CenteredDifference{N}(derivative_order::Int, Δr::T) where {N, T <: Real}
-    dr = ntuple(i -> Δr, Val(N))
-    return CenteredDifference(derivative_order, dr)
+function CenteredDifference{N, Tag}(Δr::T) where {N, T, Tag}
+	dr = ntuple(i -> Δr, Val(N))
+	return CenteredDifference{Tag}(dr)
 end
+
+abstract type OperatorTag end
+
+struct Laplacian <: OperatorTag end
+
+struct Divergence <: OperatorTag end
+
+struct Gradient <: OperatorTag end
+
+derivative_order(::Type{Laplacian}) = 2
+
+derivative_order(::Type{Divergence}) = 1
+
+derivative_order(::Type{Gradient}) = 1
+
+concretize(::Type{Laplacian}) = laplacian
+
+concretize(::Type{Divergence}) = divergence
+
+concretize(::Type{Gradient}) = gradient
 
 
 abstract type BoundaryCondition end
@@ -131,7 +152,8 @@ function Base.:*(Op::CenteredDifference{2}, A::AbstractMatrix)
     return B
 end
 
-function LinearAlgebra.mul!(B::AbstractArray, Op::CenteredDifference{N}, A::AbstractArray) where {N}
+function LinearAlgebra.mul!(B::AbstractArray, Op::CenteredDifference{N, T, Tag}, A::AbstractArray) where {N, T, Tag}
+	op = concretize(Tag)
 	sz = size(A) .- 1
 	CI = CartesianIndices(UnitRange.(2, sz))
 	#C = CartesianIndices(A)
@@ -139,14 +161,63 @@ function LinearAlgebra.mul!(B::AbstractArray, Op::CenteredDifference{N}, A::Abst
 	# While not on the edges
 	#for I in C[2:(end - 1), 2:(end - 1)]
 	for I in CI
-		B[I] = laplacian(A, I, coeffs)
+		  B[I] = op(A, I, coeffs)
 	end
 	return B
 end
 
+function gradient(A, I, coeffs::NTuple{2})
+	Iy = CartesianIndex(0, 1)
+	Ix = CartesianIndex(1, 0)
+
+	Cx, Cy = coeffs
+	∇_x = Cx[1] * A[I - Ix] + Cx[2] * A[I] + Cx[3] * A[I + Ix] 
+	∇_y = Cy[1] * A[I - Iy] + Cy[2] * A[I] + Cy[3] * A[I + Iy]
+	
+	return SVector(∇_x , ∇_y)
+end
+
+function gradient(A, I, coeffs::NTuple{3})
+	Iz = CartesianIndex(0, 0, 1)
+	Iy = CartesianIndex(0, 1, 0)
+	Ix = CartesianIndex(1, 0, 0)
+
+	Cx, Cy, Cz = coeffs
+	∇_x = Cx[1] * A[I - Ix] + Cx[2] * A[I] + Cx[3] * A[I + Ix] 
+	∇_y = Cy[1] * A[I - Iy] + Cy[2] * A[I] + Cy[3] * A[I + Iy]
+	∇_z = Cz[1] * A[I - Iz] + Cz[2] * A[I] + Cz[3] * A[I + Iz]
+	
+	return SVector(∇_x, ∇_y, ∇_z)
+end
+
+function divergence(A, I, coeffs::NTuple{2})
+	Iy = CartesianIndex(0, 1)
+	Ix = CartesianIndex(1, 0)
+
+	Cx, Cy = coeffs
+	div = ( Cx[1] * A[I - Ix][1] + Cx[2] * A[I][1] + Cx[3] * A[I + Ix][1] 
+	+ Cy[1] * A[I - Iy][2] + Cy[2] * A[I][2] + Cy[3] * A[I + Iy][2] )
+	
+	return div
+end
+
+function divergence(A, I, coeffs::NTuple{3})
+	Iz = CartesianIndex(0, 0, 1)
+	Iy = CartesianIndex(0, 1, 0)
+	Ix = CartesianIndex(1, 0, 0)
+
+	Cx, Cy, Cz = coeffs
+	div = (
+      Cx[1] * A[I - Ix][1] + Cx[2] * A[I][1] + Cx[3] * A[I + Ix][1] +
+      Cy[1] * A[I - Iy][2] + Cy[2] * A[I][2] + Cy[3] * A[I + Iy][2] +
+      Cz[1] * A[I - Iz][3] + Cz[2] * A[I][3] + Cz[3] * A[I + Iz][3]
+  )
+	return div
+end
+
 function laplacian(A, I, coeffs::NTuple{2})
-    Ix = CartesianIndex(0, 1)
-    Iy = CartesianIndex(1, 0)
+    Iy = CartesianIndex(0, 1)
+    Ix = CartesianIndex(1, 0)
 
     Cx, Cy = coeffs
 
@@ -157,24 +228,36 @@ function laplacian(A, I, coeffs::NTuple{2})
 end
 
 function laplacian(A, I, coeffs::NTuple{3})
-	Ix = CartesianIndex(0,0,1)
+	Iz = CartesianIndex(0,0,1)
 	Iy = CartesianIndex(0,1,0)
-	Iz = CartesianIndex(1,0,0)
+	Ix = CartesianIndex(1,0,0)
 
 	Cx, Cy, Cz = coeffs
 	
 	return (
-		Cx[1] * A[I - Ix] + Cx[2] * A[I] + Cx[3] * A[I + Ix] +
-		Cy[1] * A[I - Iy] + Cy[2] * A[I] + Cy[3] * A[I + Iy] +
-		Cz[1] * A[I - Iz] + Cz[2] * A[I] + Cz[3] * A[I + Iz]
+		  Cx[1] * A[I - Ix] + Cx[2] * A[I] + Cx[3] * A[I + Ix] +
+		  Cy[1] * A[I - Iy] + Cy[2] * A[I] + Cy[3] * A[I + Iy] +
+		  Cz[1] * A[I - Iz] + Cz[2] * A[I] + Cz[3] * A[I + Iz]
 	)
 end
 
-function build_caches(op, bc::BoundaryCondition, u0)
-    sz = size(u0) .+ 2
-    extended = zeros(sz)
-    result = copy(extended)
-    return extended, result
+# The next applies to Laplacian and Divergence
+auxiliar_caches(::Type{E}, op) where{E} = E 
+auxiliar_caches(::Type{E}, ::CenteredDifference{N, T, Gradient}) where {N, T, E} = SVector{N, E}
+
+function build_caches(op::CenteredDifference{N, T, Tag}, box::BoxBC, u0) where {N, T, Tag} #do we need op?, yes we do! 
+	sz = size(u0) .+ 2
+	
+	E = eltype(u0)
+	extended = zeros(E, sz)
+	result = zeros(auxiliar_caches(E, op) , sz)
+
+	for bc in box.bcs
+		initialize(op::CenteredDifference{N, T, Tag}, bc, extended)
+	end
+
+	
+	return extended, result
 end
 
 function build_caches(op, bc::DirichletBC{2}, u0) #do we need op?
@@ -319,17 +402,17 @@ function apply_BCs(op, u, bc::RobinAxisBC{A}, extended) where {A <: Axis}
 
 end
 
-function ghost_ranges(sz::NTuple{2},::Type{XAxis})
+function ghost_ranges(sz::NTuple{2},::Type{YAxis})
 	m, n = sz
 	return (2:m-1, 1:1), (2:m-1, n:n)
 end
 
-function ghost_ranges(sz::NTuple{2},::Type{YAxis})
+function ghost_ranges(sz::NTuple{2},::Type{XAxis})
 	m, n = sz
 	return (1:1, 2:n-1), (m:m, 2:n-1)
 end
 
-function ghost_ranges(sz::NTuple{3},::Type{XAxis})
+function ghost_ranges(sz::NTuple{3},::Type{ZAxis})
 	l, m, n = sz
 	return (2:l-1, 2:m-1, 1:1), (2:l-1, 2:m-1, n:n)
 end
@@ -339,14 +422,14 @@ function ghost_ranges(sz::NTuple{3},::Type{YAxis})
 	return (2:l-1, 1:1, 2:n-1), (2:l-1, m:m, 2:n-1)
 end
 
-function ghost_ranges(sz::NTuple{3},::Type{ZAxis})
+function ghost_ranges(sz::NTuple{3},::Type{XAxis})
 	l, m, n = sz
 	return (1:1, 2:m-1, 2:n-1), (l:l, 2:m-1, 2:n-1)
 end
 
 const DerivativeAxisBC{T} = Union{NeumannAxisBC{T}, RobinAxisBC{T}}
 
-function boundary_ranges(sz::NTuple{2}, ::DerivativeAxisBC{XAxis})
+function boundary_ranges(sz::NTuple{2}, ::DerivativeAxisBC{YAxis})
 	m, n = sz
 	#extract two as it is the extended matrix size
 	lo = CartesianIndices((1:m-2, 2:2))    
@@ -355,7 +438,7 @@ function boundary_ranges(sz::NTuple{2}, ::DerivativeAxisBC{XAxis})
 	return lo, hi
 end
 
-function boundary_ranges(sz::NTuple{2}, ::DerivativeAxisBC{YAxis})
+function boundary_ranges(sz::NTuple{2}, ::DerivativeAxisBC{XAxis})
 	m, n = sz
 	#extract two as it is the extended matrix size
 	lo = CartesianIndices((2:2, 1:n-2))    
@@ -364,7 +447,7 @@ function boundary_ranges(sz::NTuple{2}, ::DerivativeAxisBC{YAxis})
 	return lo, hi
 end
 
-function boundary_ranges(sz::NTuple{3}, ::DerivativeAxisBC{XAxis})
+function boundary_ranges(sz::NTuple{3}, ::DerivativeAxisBC{ZAxis})
 	l, m, n = sz
 	#extract two as it is the extended matrix size
 	lo = CartesianIndices((1:l-2,1:m-2, 2:2))    
@@ -382,7 +465,7 @@ function boundary_ranges(sz::NTuple{3}, ::DerivativeAxisBC{YAxis})
 	return lo, hi
 end
 
-function boundary_ranges(sz::NTuple{3}, ::DerivativeAxisBC{ZAxis})
+function boundary_ranges(sz::NTuple{3}, ::DerivativeAxisBC{XAxis})
 	l, m, n = sz
 	#extract two as it is the extended matrix size
 	lo = CartesianIndices((2:2,1:m-2, 1:n-2))    
@@ -391,7 +474,7 @@ function boundary_ranges(sz::NTuple{3}, ::DerivativeAxisBC{ZAxis})
 	return lo, hi
 end
 
-function boundary_ranges(sz::NTuple{2}, ::PeriodicAxisBC{XAxis})
+function boundary_ranges(sz::NTuple{2}, ::PeriodicAxisBC{YAxis})
 	m, n = sz
 
 	#extract two as it is the extended matrix size
@@ -401,7 +484,7 @@ function boundary_ranges(sz::NTuple{2}, ::PeriodicAxisBC{XAxis})
 	return lo, hi
 end
 
-function boundary_ranges(sz::NTuple{2}, ::PeriodicAxisBC{YAxis})
+function boundary_ranges(sz::NTuple{2}, ::PeriodicAxisBC{XAxis})
 	m, n = sz
 
 	#extract two as it is the extended matrix size
@@ -411,7 +494,7 @@ function boundary_ranges(sz::NTuple{2}, ::PeriodicAxisBC{YAxis})
 	return lo, hi
 end
 
-function boundary_ranges(sz::NTuple{3}, ::PeriodicAxisBC{XAxis})
+function boundary_ranges(sz::NTuple{3}, ::PeriodicAxisBC{ZAxis})
 	l, m, n = sz
 
 	#extract two as it is the extended matrix size
@@ -431,7 +514,7 @@ function boundary_ranges(sz::NTuple{3}, ::PeriodicAxisBC{YAxis})
 	return lo, hi
 end
 
-function boundary_ranges(sz::NTuple{3}, ::PeriodicAxisBC{ZAxis})
+function boundary_ranges(sz::NTuple{3}, ::PeriodicAxisBC{XAxis})
 	l, m, n = sz
 
 	#extract two as it is the extended matrix size
