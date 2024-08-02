@@ -215,6 +215,54 @@ function divergence(A, I, coeffs::NTuple{3})
 	return div
 end
 
+function gradient(A, I, coeffs::NTuple{2})
+	Iy = CartesianIndex(0, 1)
+	Ix = CartesianIndex(1, 0)
+
+	Cx, Cy = coeffs
+	∇_x = Cx[1] * A[I - Ix] + Cx[2] * A[I] + Cx[3] * A[I + Ix] 
+	∇_y = Cy[1] * A[I - Iy] + Cy[2] * A[I] + Cy[3] * A[I + Iy]
+	
+	return SVector(∇_x , ∇_y)
+end
+
+function gradient(A, I, coeffs::NTuple{3})
+	Iz = CartesianIndex(0, 0, 1)
+	Iy = CartesianIndex(0, 1, 0)
+	Ix = CartesianIndex(1, 0, 0)
+
+	Cx, Cy, Cz = coeffs
+	∇_x = Cx[1] * A[I - Ix] + Cx[2] * A[I] + Cx[3] * A[I + Ix] 
+	∇_y = Cy[1] * A[I - Iy] + Cy[2] * A[I] + Cy[3] * A[I + Iy]
+	∇_z = Cz[1] * A[I - Iz] + Cz[2] * A[I] + Cz[3] * A[I + Iz]
+	
+	return SVector(∇_x, ∇_y, ∇_z)
+end
+
+function divergence(A, I, coeffs::NTuple{2})
+	Iy = CartesianIndex(0, 1)
+	Ix = CartesianIndex(1, 0)
+
+	Cx, Cy = coeffs
+	div = ( Cx[1] * A[I - Ix][1] + Cx[2] * A[I][1] + Cx[3] * A[I + Ix][1] 
+	+ Cy[1] * A[I - Iy][2] + Cy[2] * A[I][2] + Cy[3] * A[I + Iy][2] )
+	
+	return div
+end
+
+function divergence(A, I, coeffs::NTuple{3})
+	Iz = CartesianIndex(0, 0, 1)
+	Iy = CartesianIndex(0, 1, 0)
+	Ix = CartesianIndex(1, 0, 0)
+
+	Cx, Cy, Cz = coeffs
+	div = ( Cx[1] * A[I - Ix][1] + Cx[2] * A[I][1] + Cx[3] * A[I + Ix][1] 
+	+ Cy[1] * A[I - Iy][2] + Cy[2] * A[I][2] + Cy[3] * A[I + Iy][2]
+	+ Cz[1] * A[I - Iz][3] + Cz[2] * A[I][3] + Cz[3] * A[I + Iz][3] )
+	
+	return div
+end
+
 function laplacian(A, I, coeffs::NTuple{2})
     Iy = CartesianIndex(0, 1)
     Ix = CartesianIndex(1, 0)
@@ -228,6 +276,7 @@ function laplacian(A, I, coeffs::NTuple{2})
 end
 
 function laplacian(A, I, coeffs::NTuple{3})
+
 	Iz = CartesianIndex(0,0,1)
 	Iy = CartesianIndex(0,1,0)
 	Ix = CartesianIndex(1,0,0)
@@ -235,15 +284,18 @@ function laplacian(A, I, coeffs::NTuple{3})
 	Cx, Cy, Cz = coeffs
 	
 	return (
+
 		  Cx[1] * A[I - Ix] + Cx[2] * A[I] + Cx[3] * A[I + Ix] +
 		  Cy[1] * A[I - Iy] + Cy[2] * A[I] + Cy[3] * A[I + Iy] +
 		  Cz[1] * A[I - Iz] + Cz[2] * A[I] + Cz[3] * A[I + Iz]
+
 	)
 end
 
 # The next applies to Laplacian and Divergence
 auxiliar_caches(::Type{E}, op) where{E} = E 
 auxiliar_caches(::Type{E}, ::CenteredDifference{N, T, Gradient}) where {N, T, E} = SVector{N, E}
+
 
 function build_caches(op::CenteredDifference{N, T, Tag}, box::BoxBC, u0) where {N, T, Tag} #do we need op?, yes we do! 
 	sz = size(u0) .+ 2
@@ -258,6 +310,7 @@ function build_caches(op::CenteredDifference{N, T, Tag}, box::BoxBC, u0) where {
 
 	
 	return extended, result
+
 end
 
 function build_caches(op, bc::DirichletBC{2}, u0) #do we need op?
