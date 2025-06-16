@@ -1,0 +1,70 @@
+# Grid parameters
+Nx = 30
+Ny = 30
+Nz = 30
+dx = 1.0
+dy = 1.0
+dz = 1.0
+dt = 1.0
+tf = 200.0
+
+# Physics
+Gamma = 0.2
+
+# Landau-de Gennes
+A = 1.0
+U = 3.5
+
+# Elasticity
+L1 = 0.1
+L2 = 0.0
+L3 = 0.0
+L4 = 0.0
+
+# Flexoelectricity
+zeta1 = 0.01
+zeta2 = 0.05
+
+# Dielectricity
+diel_anisotropy = -0.01
+
+# Wall Anchoring (only customize what you need)
+[wall_anchoring]
+# [wall_anchoring.bottom]
+# strength = 0.2
+# type = "planar"
+# direction = [1.0, 0.0, 0.0]
+
+# [wall_anchoring.top]
+# strength = 0.2
+# type = "planar"
+# direction = [1.0, 0.0, 0.0]
+
+# External electric field
+[external_conditions.electric_field]
+amplitude = [0.0, 0.02, 0.0]
+base_strength = [0.0, 0.01, 0.0]
+frequency = 0.005  # 1/200
+type = "AC"
+randnoise = true
+
+# Particle settings
+[particle]
+exists = false
+radius = 2.0
+
+[particle.anchoring]
+strength = 0.1
+type = "homeotropic"
+
+[particle.center]
+x = 30  # Nx/2
+y = 1
+z = 10
+
+[flags]
+LandaudeGennes = true
+elasticity = true
+anchoring = true
+flexoelectricity = false
+dielectricity = false
