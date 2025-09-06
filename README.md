@@ -34,7 +34,7 @@ The figure below shows a simulated binary mixture: two isotropic droplets immers
  
 
 <p align="center">
-  <img src="assets/figure8b.png" width="500"/>
+  <img src="assets/Picture8b.png" width="500"/>
   <br><i>Figure: Two isotropic droplets immersed in a nematic environment. Director vectors (white lines) and scalar order parameter (color map 0–0.75).</i>
 </p>
 
@@ -47,10 +47,10 @@ The figures below show the evolution of an axial droplet immersed in an isotropi
 - Bottom right: velocity profile (x-component from -0.07 to 0.07).  
 
 <p align="center">
-  <img src="assets/figure9.png" width="220"/>
-  <img src="assets/figure10.png" width="220"/>
-  <img src="assets/figure11.png" width="220"/>
-  <img src="assets/figure12.png" width="220"/>
+  <img src="assets/Picture9.png" width="220"/>
+  <img src="assets/Picture10.png" width="220"/>
+  <img src="assets/Picture11.png" width="220"/>
+  <img src="assets/Picture12.png" width="220"/>
   <br><i>Figures: Time evolution of an axial droplet under semi-Couette flow. Successive time steps from initial conditions to final state.</i>
 </p>
 
@@ -60,7 +60,7 @@ The figures below show the evolution of an axial droplet immersed in an isotropi
 The figure below shows a snapshot of an axial droplet simulation immersed in an isotropic fluid under parabolic (Poiseuille-like) flow.  
 
 <p align="center">
-  <img src="assets/figure16.png" width="500"/>
+  <img src="assets/Picture16.png" width="500"/>
   <br><i>Figure: Axial droplet under parabolic flow. Director vectors (gray lines), scalar order parameter, concentration and velocity profile shown.</i>
 </p>
 
@@ -70,7 +70,7 @@ The figure below shows a snapshot of an axial droplet simulation immersed in an 
 The figure below shows a snapshot of an active nematic system.  
 
 <p align="center">
-  <img src="assets/figure22.png" width="500"/>
+  <img src="assets/Picture22.png" width="500"/>
   <br><i>Figure: Active nematic snapshot. Director vectors, scalar order parameter and velocity field shown.</i>
 </p>
 
