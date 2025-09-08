@@ -3,7 +3,7 @@ steps:
   - label: ":julia: Run tests on Julia LTS"
     plugins:
       - JuliaCI/julia#v1:
-          version: 1.6
+          version: 1.10
       - JuliaCI/julia-test#v1:
     command: |
       julia -e 'using Pkg;
