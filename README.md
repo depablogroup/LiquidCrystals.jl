@@ -74,8 +74,18 @@ The figure below shows a snapshot of an active nematic system.
   <br><i>Figure: Active nematic snapshot. Director vectors, scalar order parameter and velocity field shown.</i>
 </p>
 
+The video below shows the complete dynamics:
+
+<p align="center">
+  <a href="assets/Video6_small.mp4">
+    <img src="assets/Picture22.png" width="400" alt="Active nematic video thumbnail">
+    <br>Click to watch the video
+  </a>
+</p>
+
+
 ---
 
 ## Citation
 
-If you use this package in your research, please cite the repository and relevant publications associated with LiquidCrystals.jl.
+If you use this package in your research, please cite the repository and relevant publications associated with LiquidCrystals.jl, including Jonathan Salmerón's PhD thesis: On the Dynamics of Active and Multi-Component Liquid Crystals (The University of Chicago 2024, https://doi.org/10.6082/uchicago.13995)
