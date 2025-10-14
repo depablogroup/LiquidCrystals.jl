@@ -79,7 +79,7 @@ The video below shows the complete dynamics:
 <p align="center">
   <a href="assets/Video6_small.mp4">
     <img src="assets/Picture22.png" width="400" alt="Active nematic video thumbnail">
-    <br>Click to watch the video
+    <br>Click to watch (or download) the video
   </a>
 </p>
 
